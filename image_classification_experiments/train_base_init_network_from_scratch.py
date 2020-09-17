@@ -14,7 +14,8 @@ import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
-from image_classification_experiments.resnet_models import *
+# from image_classification_experiments.resnet_models import *
+from resnet_models import *
 import time
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
