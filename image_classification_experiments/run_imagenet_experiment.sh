@@ -11,7 +11,7 @@ export PYTHONPATH=${PROJ_ROOT}
 mkdir -p ${PROJ_ROOT}/logs
 touch ${PROJ_ROOT}/logs/remind_imagenet.log
 
-TODAY = $(date +'%m_%d_%Y')
+TODAY=$(date +'%m_%d_%Y')
 OUTPUT_DIR=/content/mounted/results/${TODAY}
 mkdir -p ${OUTPUT_DIR}
 
