@@ -2,11 +2,11 @@
 
 #PROJ_ROOT=/home/tyler/Desktop/codes/REMIND
 PROJ_ROOT=$1
-echo $PROJ_ROOT
+# echo $PROJ_ROOT
 
 export PYTHONPATH=${PROJ_ROOT}
-#source activate remind_proj
-cd ${PROJ_ROOT}/image_classification_experiments
+source activate remind_proj
+# cd ${PROJ_ROOT}/image_classification_experiments
 
 mkdir -p ${PROJ_ROOT}/logs
 touch ${PROJ_ROOT}/logs/remind_imagenet.log
