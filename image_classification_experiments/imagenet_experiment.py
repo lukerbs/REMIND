@@ -145,10 +145,10 @@ def streaming(args, remind):
 
         # perform inference ####################################
         # GET TEST DATA FOR ALL CLASSES ENCOUNTERED THUS FAR
-        ## Following two lines unnecessary? Bc just happening again when call update_accuracies()?
-        # test_loader = get_data_loader(args.images_dir, args.label_dir, 'val', args.min_class, max_class,
-        #                               batch_size=args.batch_size)
-        # _, probas, y_test = remind.predict(test_loader, pq)
+        # Following two lines unnecessary? Bc just happening again when call update_accuracies()?
+        test_loader = get_data_loader(args.images_dir, args.label_dir, 'val', args.min_class, max_class,
+                                      batch_size=args.batch_size)
+        _, probas, y_test = remind.predict(test_loader, pq)
         update_accuracies(args, curr_max_class=max_class, remind=remind, pq=pq, accuracies=accuracies)
 
     # Just print final accuracy --- not updating accuracy dict
