@@ -11,6 +11,10 @@ export PYTHONPATH=${PROJ_ROOT}
 mkdir -p ${PROJ_ROOT}/logs
 touch ${PROJ_ROOT}/logs/remind_imagenet.log
 
+
+OUTPUT_DIR="/content/mounted/results/$(date)"
+mkdir -p "$OUTPUT_DIR"
+
 IMAGE_DIR=/content/mounted/imagenet/data/ImageNet2012
 EXPT_NAME=remind_imagenet
 GPU=0
@@ -47,5 +51,6 @@ CUDA_VISIBLE_DEVICES=${GPU} python -u imagenet_experiment.py \
 --label_dir ${LABEL_ORDER_DIR} \
 --num_codebooks ${NUM_CODEBOOKS} \
 --codebook_size ${CODEBOOK_SIZE} \
---expt_name ${EXPT_NAME}
+--expt_name ${EXPT_NAME} \
+--save_dir ${OUTPUT_DIR}
 # > logs/${EXPT_NAME}.log
