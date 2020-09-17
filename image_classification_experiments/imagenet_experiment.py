@@ -16,18 +16,32 @@ def get_data_loader(images_dir, label_dir, split, min_class, max_class, batch_si
 
 
 def compute_accuracies(loader, remind, pq):
+    """Makes predictions for data in loader and computes top-1 and top-5 accuracy"""
     _, probas, y_test_init = remind.predict(loader, pq)
     top1, top5 = utils.accuracy(probas, y_test_init, topk=(1, 5))
     return probas, top1, top5
 
-
+## Compute and save accuracies 
 def update_accuracies(args, curr_max_class, remind, pq, accuracies):
+    """Recalculates and records base accuracy, non-base classes accuracy and all seen classes (base+non-base) accuracy """
+
+    ## Compute current accuracy for each base class
+    for i in range(args.base_init_classes):
+        # Load validation data for just this particular base initialization class
+        base_test_loader = get_data_loader(args.images_dir, args.label_dir, 'val', min_class=i,
+                                       max_class=i+1)
+        base_probas, base_top1, base_top5 = compute_accuracies(base_test_loader, remind, pq)
+        accuracies[str(i)+'_base_class_top1'].append(float(base_top1))
+        accuracies[str(i)+'_base_class_top5'].append(float(base_top5))
+    
+    # Compute accuracy on all base initialization data
     base_test_loader = get_data_loader(args.images_dir, args.label_dir, 'val', min_class=args.min_class,
                                        max_class=args.base_init_classes)
     base_probas, base_top1, base_top5 = compute_accuracies(base_test_loader, remind, pq)
     print('\nBase Init Classes (%d-%d): top1=%0.2f%% -- top5=%0.2f%%' % (
         args.min_class, args.base_init_classes - 1, base_top1, base_top5))
 
+    ## Compute accuracy on only data encountered during streaming up until this point, not base initialization
     non_base_classes_test_loader = get_data_loader(args.images_dir, args.label_dir, 'val', args.base_init_classes,
                                                    curr_max_class)
     non_base_probas, non_base_top1, non_base_top5 = compute_accuracies(non_base_classes_test_loader, remind, pq)
@@ -56,6 +70,11 @@ def streaming(args, remind):
     accuracies = {'base_classes_top1': [], 'non_base_classes_top1': [], 'seen_classes_top1': [],
                   'base_classes_top5': [], 'non_base_classes_top5': [], 'seen_classes_top5': []}
 
+    # Initialize dict with each of base classes
+    for i in range(args.base_init_classes):
+        accuracies[str(i)+'_base_class_top1'] = []
+        accuracies[str(i)+'_base_class_top5'] = []
+
     counter = utils.Counter()
 
     if args.resume_full_path is not None:
@@ -69,6 +88,7 @@ def streaming(args, remind):
                                       batch_size=args.batch_size)
         _, probas, y_test = remind.predict(test_loader, pq)
         update_accuracies(args, curr_max_class=args.streaming_min_class, remind=remind, pq=pq, accuracies=accuracies)
+        
     else:
         print('\nPerforming base initialization...')
         feat_data, label_data, item_ix_data = extract_base_init_features(args.images_dir, args.label_dir,
@@ -82,11 +102,11 @@ def streaming(args, remind):
                                                                           args.spatial_feat_dim, args.num_codebooks,
                                                                           args.codebook_size, counter=counter)
 
+        ## Computing preliminary accuracies for all base classes prior to beginning streaming training
         initial_test_loader = get_data_loader(args.images_dir, args.label_dir, 'val', min_class=args.min_class,
                                               max_class=args.base_init_classes)
         print('\nComputing base accuracies...')
         base_probas, base_top1, base_top5 = compute_accuracies(initial_test_loader, remind, pq)
-
         print('\nInitial Test: top1=%0.2f%% -- top5=%0.2f%%' % (base_top1, base_top5))
         utils.save_predictions(base_probas, args.min_class, args.base_init_classes, args.save_dir)
         accuracies['base_classes_top1'].append(float(base_top1))
@@ -94,8 +114,18 @@ def streaming(args, remind):
         accuracies['seen_classes_top1'].append(float(base_top1))
         accuracies['seen_classes_top5'].append(float(base_top5))
 
+        
+        for i in range(args.base_init_classes):
+            # Load validation data for just this particular base initialization class
+            base_test_loader = get_data_loader(args.images_dir, args.label_dir, 'val', min_class=i,
+                                        max_class=i+1)
+            base_probas, base_top1, base_top5 = compute_accuracies(base_test_loader, remind, pq)
+            accuracies[str(i)+'_base_class_top1'].append(float(base_top1))
+            accuracies[str(i)+'_base_class_top5'].append(float(base_top5))
+        
+
     print('\nBeginning streaming training...')
-    for class_ix in range(args.streaming_min_class, args.streaming_max_class, args.class_increment):
+    for class_ix in range(args.streaming_min_class, args.streaming_max_class, args.class_increment): #########################
         max_class = class_ix + args.class_increment
 
         print('\nTraining classes {}-{}.'.format(class_ix, max_class))
@@ -113,13 +143,15 @@ def streaming(args, remind):
         save_full_path = os.path.join(args.save_dir, 'remind_model/')
         remind.save(max_class, save_full_path, rehearsal_ixs, latent_dict, class_id_to_item_ix_dict, pq)
 
-        # perform inference
-        test_loader = get_data_loader(args.images_dir, args.label_dir, 'val', args.min_class, max_class,
-                                      batch_size=args.batch_size)
-        _, probas, y_test = remind.predict(test_loader, pq)
+        # perform inference ####################################
+        # GET TEST DATA FOR ALL CLASSES ENCOUNTERED THUS FAR
+        ## Following two lines unnecessary? Bc just happening again when call update_accuracies()?
+        # test_loader = get_data_loader(args.images_dir, args.label_dir, 'val', args.min_class, max_class,
+        #                               batch_size=args.batch_size)
+        # _, probas, y_test = remind.predict(test_loader, pq)
         update_accuracies(args, curr_max_class=max_class, remind=remind, pq=pq, accuracies=accuracies)
 
-    # final accuracy
+    # Just print final accuracy --- not updating accuracy dict
     test_loader = get_data_loader(args.images_dir, args.label_dir, 'val', args.min_class, args.streaming_max_class,
                                   batch_size=args.batch_size)
     _, probas, y_test = remind.predict(test_loader, pq)
