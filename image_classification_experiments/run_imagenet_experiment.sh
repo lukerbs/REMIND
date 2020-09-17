@@ -5,8 +5,10 @@ PROJ_ROOT=$1
 echo $PROJ_ROOT
 
 export PYTHONPATH=${PROJ_ROOT}
-source activate remind_proj
+#source activate remind_proj
 cd ${PROJ_ROOT}/image_classification_experiments
+
+mkdir -p ${PROJ_ROOT}/logs
 
 IMAGE_DIR=/media/tyler/nvme_drive/data/ImageNet2012
 EXPT_NAME=remind_imagenet
