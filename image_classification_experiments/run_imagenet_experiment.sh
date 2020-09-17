@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-PROJ_ROOT=/home/tyler/Desktop/codes/REMIND
+#PROJ_ROOT=/home/tyler/Desktop/codes/REMIND
+PROJ_ROOT=$1
+echo $PROJ_ROOT
 
 export PYTHONPATH=${PROJ_ROOT}
 source activate remind_proj
