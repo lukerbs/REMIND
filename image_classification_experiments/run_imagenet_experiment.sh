@@ -9,6 +9,7 @@ export PYTHONPATH=${PROJ_ROOT}
 cd ${PROJ_ROOT}/image_classification_experiments
 
 mkdir -p ${PROJ_ROOT}/logs
+touch ${PROJ_ROOT}/logs/remind_imagenet.log
 
 IMAGE_DIR=/media/tyler/nvme_drive/data/ImageNet2012
 EXPT_NAME=remind_imagenet
