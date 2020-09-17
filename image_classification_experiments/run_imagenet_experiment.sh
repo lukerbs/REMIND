@@ -12,8 +12,8 @@ mkdir -p ${PROJ_ROOT}/logs
 touch ${PROJ_ROOT}/logs/remind_imagenet.log
 
 
-OUTPUT_DIR="/content/mounted/results/$(date)"
-mkdir -p "$OUTPUT_DIR"
+OUTPUT_DIR=/content/mounted/results/$(date)
+mkdir -p ${OUTPUT_DIR}
 
 IMAGE_DIR=/content/mounted/imagenet/data/ImageNet2012
 EXPT_NAME=remind_imagenet
