@@ -2,10 +2,14 @@ import numpy as np
 import time
 from collections import defaultdict
 import faiss
-import image_classification_experiments.utils_imagenet as utils_imagenet
-import image_classification_experiments.utils as utils
-from image_classification_experiments.retrieve_any_layer import ModelWrapper
-from image_classification_experiments.utils import build_classifier
+# import image_classification_experiments.utils_imagenet as utils_imagenet
+# import image_classification_experiments.utils as utils
+# from image_classification_experiments.retrieve_any_layer import ModelWrapper
+# from image_classification_experiments.utils import build_classifier
+import utils_imagenet
+import utils
+from retrieve_any_layer import ModelWrapper
+from utils import build_classifier
 
 
 def extract_features(model, data_loader, data_len, num_channels=512, spatial_feat_dim=7):
