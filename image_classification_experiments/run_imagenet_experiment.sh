@@ -47,4 +47,4 @@ CUDA_VISIBLE_DEVICES=${GPU} python -u imagenet_experiment.py \
 --label_dir ${LABEL_ORDER_DIR} \
 --num_codebooks ${NUM_CODEBOOKS} \
 --codebook_size ${CODEBOOK_SIZE} \
---expt_name ${EXPT_NAME} > logs/${EXPT_NAME}.log
+--expt_name ${EXPT_NAME}# > logs/${EXPT_NAME}.log
