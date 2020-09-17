@@ -4,7 +4,8 @@ import json
 import random
 import math
 import torch.utils.data
-from image_classification_experiments.resnet_models import *
+# from image_classification_experiments.resnet_models import *
+from resnet_models import *
 
 
 class Counter:
