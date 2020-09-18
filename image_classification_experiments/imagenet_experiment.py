@@ -2,8 +2,10 @@ import argparse
 import torch
 import json
 import os
-from image_classification_experiments.REMINDModel import REMINDModel
-from image_classification_experiments.imagenet_base_initialization import *
+# from image_classification_experiments.REMINDModel import REMINDModel
+# from image_classification_experiments.imagenet_base_initialization import *
+from REMINDModel import REMINDModel
+from imagenet_base_initialization import *
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 

@@ -9,8 +9,10 @@ import random
 import os
 import faiss
 import pickle
-import image_classification_experiments.utils as utils
-from image_classification_experiments.retrieve_any_layer import ModelWrapper
+#import image_classification_experiments.utils as utils
+import utils
+# from image_classification_experiments.retrieve_any_layer import ModelWrapper
+from retrieve_any_layer import ModelWrapper
 
 sys.setrecursionlimit(10000)
 

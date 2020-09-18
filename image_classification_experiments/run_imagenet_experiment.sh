@@ -2,16 +2,20 @@
 
 #PROJ_ROOT=/home/tyler/Desktop/codes/REMIND
 PROJ_ROOT=$1
-echo $PROJ_ROOT
+# echo $PROJ_ROOT
 
 export PYTHONPATH=${PROJ_ROOT}
 #source activate remind_proj
-cd ${PROJ_ROOT}/image_classification_experiments
+# cd ${PROJ_ROOT}/image_classification_experiments
 
 mkdir -p ${PROJ_ROOT}/logs
 touch ${PROJ_ROOT}/logs/remind_imagenet.log
 
-IMAGE_DIR=/media/tyler/nvme_drive/data/ImageNet2012
+NOW=$(date +'%m_%d_%Y__%H_%M_%S')
+OUTPUT_DIR=/content/mounted/results/${NOW}
+mkdir -p ${OUTPUT_DIR}
+
+IMAGE_DIR=/content/mounted/imagenet/data/ImageNet2012
 EXPT_NAME=remind_imagenet
 GPU=0
 
@@ -47,4 +51,6 @@ CUDA_VISIBLE_DEVICES=${GPU} python -u imagenet_experiment.py \
 --label_dir ${LABEL_ORDER_DIR} \
 --num_codebooks ${NUM_CODEBOOKS} \
 --codebook_size ${CODEBOOK_SIZE} \
---expt_name ${EXPT_NAME}# > logs/${EXPT_NAME}.log
+--expt_name ${EXPT_NAME} \
+--save_dir ${OUTPUT_DIR}
+# > logs/${EXPT_NAME}.log
