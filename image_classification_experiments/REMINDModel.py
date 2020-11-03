@@ -16,11 +16,12 @@ from retrieve_any_layer import ModelWrapper
 
 sys.setrecursionlimit(10000)
 
-
+# randint takes in max_val and num samples
 def randint(max_val, num_samples):
     """
     return num_samples random integers in the range(max_val)
     """
+    # create a dictionary of random vals
     rand_vals = {}
     _num_samples = min(max_val, num_samples)
     while True:
@@ -108,10 +109,17 @@ class REMINDModel(object):
         ongoing_class = None
 
         # put classifiers on GPU and set plastic portion of network to train
-        classifier_F = self.classifier_F.cuda()
-        classifier_F.train()
-        classifier_G = self.classifier_G.cuda()
-        classifier_G.eval()
+        if torch.cuda.is_available():
+            classifier_F = self.classifier_F.cuda()
+            classifier_F.train()
+            classifier_G = self.classifier_G.cuda()
+            classifier_G.eval()
+        else:
+            classifier_F = self.classifier_F
+            classifier_F.train()
+            classifier_G = self.classifier_G
+            classifier_G.eval()
+
 
         criterion = nn.CrossEntropyLoss(reduction='none')
 
@@ -123,7 +131,11 @@ class REMINDModel(object):
         for batch_images, batch_labels, batch_item_ixs in curr_loader:
 
             # get features from G and latent codes from PQ
-            data_batch = classifier_G(batch_images.cuda()).cpu().numpy()
+            if torch.cuda.is_available():
+                data_batch = classifier_G(batch_images.cuda()).cpu().numpy()
+            else:
+                data_batch = classifier_G(batch_images).cpu().numpy()
+                
             data_batch = np.transpose(data_batch, (0, 2, 3, 1))
             data_batch = np.reshape(data_batch, (-1, self.num_channels))
             codes = pq.compute_codes(data_batch)
@@ -139,7 +151,10 @@ class REMINDModel(object):
                     data_codes = np.empty(
                         (2 * self.num_samples + 1, self.num_feats, self.num_feats, self.num_codebooks),
                         dtype=np.uint8)
-                    data_labels = torch.empty((2 * self.num_samples + 1), dtype=torch.int).cuda()
+                    if torch.cuda.is_available():
+                        data_labels = torch.empty((2 * self.num_samples + 1), dtype=torch.int).cuda()
+                    else:
+                        data_labels = torch.empty((2 * self.num_samples + 1), dtype=torch.int)
                     data_codes[0] = x
                     data_labels[0] = y
                     ixs = randint(len(rehearsal_ixs), 2 * self.num_samples)
@@ -155,8 +170,11 @@ class REMINDModel(object):
                     data_batch_reconstructed = np.reshape(data_batch_reconstructed,
                                                           (-1, self.num_feats, self.num_feats,
                                                            self.num_channels))
-                    data_batch_reconstructed = torch.from_numpy(
-                        np.transpose(data_batch_reconstructed, (0, 3, 1, 2))).cuda()
+                    
+                    if torch.cuda.is_available():
+                        data_batch_reconstructed = torch.from_numpy(np.transpose(data_batch_reconstructed, (0, 3, 1, 2))).cuda()
+                    else:
+                        data_batch_reconstructed = torch.from_numpy(np.transpose(data_batch_reconstructed, (0, 3, 1, 2)))
 
                     # perform random resize crop augmentation on each tensor
                     if self.use_random_resize_crops:
@@ -184,14 +202,21 @@ class REMINDModel(object):
                     labels_b[1:] = prev_labels_b
 
                     # fit on replay mini-batch plus new sample
-                    output = classifier_F(data.cuda())
-                    loss = self.mixup_criterion(criterion, output, labels_a.cuda(), labels_b.cuda(), lam)
+                    if torch.cuda.is_available():
+                        output = classifier_F(data.cuda())
+                        loss = self.mixup_criterion(criterion, output, labels_a.cuda(), labels_b.cuda(), lam)
+                    else:
+                        output = classifier_F(data)
+                        loss = self.mixup_criterion(criterion, output, labels_a, labels_b, lam)
                 else:
                     # gather previous data for replay
                     data_codes = np.empty(
                         (self.num_samples + 1, self.num_feats, self.num_feats, self.num_codebooks),
                         dtype=np.uint8)
-                    data_labels = torch.empty((self.num_samples + 1), dtype=torch.long).cuda()
+                    if torch.cuda.is_available():
+                        data_labels = torch.empty((self.num_samples + 1), dtype=torch.long).cuda()
+                    else:
+                        data_labels = torch.empty((self.num_samples + 1), dtype=torch.long)
                     data_codes[0] = x
                     data_labels[0] = y
                     ixs = randint(len(rehearsal_ixs), self.num_samples)
@@ -207,8 +232,11 @@ class REMINDModel(object):
                     data_batch_reconstructed = np.reshape(data_batch_reconstructed,
                                                           (-1, self.num_feats, self.num_feats,
                                                            self.num_channels))
-                    data_batch_reconstructed = torch.from_numpy(
-                        np.transpose(data_batch_reconstructed, (0, 3, 1, 2))).cuda()
+                    
+                    if torch.cuda.is_available():
+                        data_batch_reconstructed = torch.from_numpy(np.transpose(data_batch_reconstructed, (0, 3, 1, 2))).cuda()
+                    else:
+                        data_batch_reconstructed = torch.from_numpy(np.transpose(data_batch_reconstructed, (0, 3, 1, 2)))
 
                     # perform random resize crop augmentation on each tensor
                     if self.use_random_resize_crops:
@@ -279,17 +307,27 @@ class REMINDModel(object):
         :return: (label predictions, probabilities, ground truth labels)
         """
         with torch.no_grad():
-            self.classifier_F.eval()
-            self.classifier_F.cuda()
-            self.classifier_G.eval()
-            self.classifier_G.cuda()
-
+            if torch.cuda.is_available():
+                self.classifier_F.eval()
+                self.classifier_F.cuda()
+                self.classifier_G.eval()
+                self.classifier_G.cuda()
+            else:
+                self.classifier_F.eval()
+                self.classifier_F
+                self.classifier_G.eval()
+                self.classifier_G
+                
             probas = torch.zeros((len(data_loader.dataset), self.num_classes))
             all_lbls = torch.zeros((len(data_loader.dataset)))
             start_ix = 0
             for batch_ix, batch in enumerate(data_loader):
                 batch_x, batch_lbls = batch[0], batch[1]
-                batch_x = batch_x.cuda()
+                if torch.cuda.is_available():
+                    batch_x = batch_x.cuda()
+                else:
+                    # do nothing
+                    batch_x = batch_x
 
                 # get G features
                 data_batch = self.classifier_G(batch_x).cpu().numpy()
@@ -301,9 +339,16 @@ class REMINDModel(object):
                 data_batch_reconstructed = pq.decode(codes)
                 data_batch_reconstructed = np.reshape(data_batch_reconstructed,
                                                       (-1, self.num_feats, self.num_feats, self.num_channels))
-                data_batch_reconstructed = torch.from_numpy(np.transpose(data_batch_reconstructed, (0, 3, 1, 2))).cuda()
-
-                batch_lbls = batch_lbls.cuda()
+                
+                if torch.cuda.is_available():
+                    data_batch_reconstructed = torch.from_numpy(np.transpose(data_batch_reconstructed, (0, 3, 1, 2))).cuda()
+                    batch_lbls = batch_lbls.cuda()
+                else:
+                    data_batch_reconstructed = torch.from_numpy(np.transpose(data_batch_reconstructed, (0, 3, 1, 2)))
+                    # do nothing
+                    batch_lbls = batch_lbls               
+                
+                
                 logits = self.classifier_F(data_batch_reconstructed)
                 end_ix = start_ix + len(batch_x)
                 probas[start_ix:end_ix] = F.softmax(logits.data, dim=1)
